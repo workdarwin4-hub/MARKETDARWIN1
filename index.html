@@ -427,7 +427,8 @@
         const productName = productType === 'popcorn' ? 'فشار' : 'منتج عادي';
 
         if (productType === 'popcorn') {
-            if (diffDays === 6) {
+            // قواعد الفشار المحدثة: من 6 إلى 18 يوم قبول، أقل من 6 أيام رفض، وأكثر من 18 يوم مرفوض
+            if (diffDays >= 6 && diffDays <= 18) {
                 resultText = 'قبول ✅';
                 resultColor = '#166534';
                 badgeHtml = `<div class="status-badge status-accepted">${resultText}</div>`;
@@ -441,6 +442,7 @@
                 badgeHtml = `<div class="status-badge status-rejected">${resultText}</div>`;
             }
         } else {
+            // المنتجات العادية: أقل من 10 أيام رفض، أكثر من 18 يوم سيستم (good)، من 10 لـ 18 يوم قبول
             if (diffDays < 10 && diffDays >= 0) {
                 resultText = 'مرفوض ❌';
                 resultColor = '#991b1b';
@@ -481,3 +483,5 @@
 
 </body>
 </html>
+
+```
