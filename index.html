@@ -3,7 +3,11 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>MARKET - نظام إدارة المرتجعات</title>
+    <title>MARKET - نظام إدارة المرتجعات السحابي</title>
+    <!-- استدعاء مكتبة Firebase -->
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-database-compat.js"></script>
+
     <style>
         *, *::before, *::after { box-sizing: border-box; }
         body {
@@ -233,7 +237,7 @@
         </div>
         <button class="calc-btn" style="background-color: #334155; margin-top:0; margin-bottom: 10px;" onclick="changeAdminPassword()">حفظ كلمة المرور الجديدة</button>
 
-        <div class="section-title">سجل عمليات الحساب</div>
+        <div class="section-title">سجل عمليات الحساب العامة</div>
         <div class="list-box" id="logsContainer"></div>
 
         <div class="section-title" style="margin-top: 20px;">إدارة الـ HR IDs المصرح لها بالدخول</div>
@@ -248,13 +252,56 @@
 </div>
 
 <script>
+    // إعدادات Firebase الخاصة بك
+    const firebaseConfig = {
+        apiKey: "AIzaSyDdYFHbsfNzrfOr0ZS4pUJGH4IcD1VDm5M",
+        authDomain: "rtnmarket-80c37.firebaseapp.com",
+        projectId: "rtnmarket-80c37",
+        storageBucket: "rtnmarket-80c37.firebasestorage.app",
+        messagingSenderId: "798777246991",
+        appId: "1:798777246991:web:70915d21e81f9f4ed92a7a",
+        measurementId: "G-S8NRBMKE6Z"
+    };
+
+    firebase.initializeApp(firebaseConfig);
+    const db = firebase.database();
+
     let currentHrId = '';
-    let allowedUsers = JSON.parse(localStorage.getItem('allowedUsers')) || [
-        {id: 'ADMIN', name: 'الآدمن الرئيسي'},
-        {id: '12345', name: 'مندوب تجريبي'}
-    ];
-    let adminPass = localStorage.getItem('adminPass') || 'ADMIN';
-    let returnLogs = JSON.parse(localStorage.getItem('returnLogs')) || [];
+    let allowedUsers = [];
+    let adminPass = 'ADMIN';
+    let returnLogs = [];
+
+    // مزامنة بيانات الآدمن والمناديب والسجلات سحابياً
+    db.ref('settings/adminPass').on('value', (snapshot) => {
+        if (snapshot.exists()) adminPass = snapshot.val();
+    });
+
+    db.ref('allowedUsers').on('value', (snapshot) => {
+        if (snapshot.exists()) {
+            allowedUsers = snapshot.val();
+        } else {
+            allowedUsers = [
+                {id: 'ADMIN', name: 'الآدمن الرئيسي'},
+                {id: '12345', name: 'مندوب تجريبي'}
+            ];
+            db.ref('allowedUsers').set(allowedUsers);
+        }
+        if(document.getElementById('adminModal').style.display === 'flex') {
+            renderAdminData();
+        }
+    });
+
+    db.ref('returnLogs').on('value', (snapshot) => {
+        if (snapshot.exists()) {
+            const data = snapshot.val();
+            returnLogs = Array.isArray(data) ? data : Object.values(data);
+        } else {
+            returnLogs = [];
+        }
+        if(document.getElementById('adminModal').style.display === 'flex') {
+            renderAdminData();
+        }
+    });
 
     function verifyLogin() {
         const inputId = document.getElementById('loginHrInput').value.trim();
@@ -296,10 +343,11 @@
     function changeAdminPassword() {
         const newPass = document.getElementById('newAdminPass').value.trim();
         if (newPass) {
-            adminPass = newPass;
-            localStorage.setItem('adminPass', adminPass);
-            document.getElementById('newAdminPass').value = '';
-            alert('تم تغيير كلمة المرور بنجاح وإلغاء القديمة تماماً');
+            db.ref('settings/adminPass').set(newPass).then(() => {
+                adminPass = newPass;
+                document.getElementById('newAdminPass').value = '';
+                alert('تم تغيير كلمة المرور سحابياً للجميع بنجاح');
+            });
         } else {
             alert('الرجاء إدخال كلمة مرور صحيحة');
         }
@@ -321,18 +369,16 @@
         }
 
         allowedUsers.push({ id: newId, name: newName });
-        localStorage.setItem('allowedUsers', JSON.stringify(allowedUsers));
-        
-        document.getElementById('newHrId').value = '';
-        document.getElementById('newHrName').value = '';
-        renderAdminData();
-        alert('تمت الإضافة بنجاح');
+        db.ref('allowedUsers').set(allowedUsers).then(() => {
+            document.getElementById('newHrId').value = '';
+            document.getElementById('newHrName').value = '';
+            alert('تمت الإضافة وتحديث الأجهزة سحابياً');
+        });
     }
 
     function removeHr(id) {
         allowedUsers = allowedUsers.filter(user => user.id !== id);
-        localStorage.setItem('allowedUsers', JSON.stringify(allowedUsers));
-        renderAdminData();
+        db.ref('allowedUsers').set(allowedUsers);
     }
 
     function renderAdminData() {
@@ -477,18 +523,9 @@
             time: timeString
         });
 
-        localStorage.setItem('returnLogs', JSON.stringify(returnLogs));
+        // حفظ السجلات سحابياً لتظهر على كل الأجهزة لحظياً
+        db.ref('returnLogs').set(returnLogs);
     }
-    // For Firebase JS SDK v7.20.0 and later, measurementId is optional
-const firebaseConfig = {
-  apiKey: "AIzaSyDdYFHbsfNzrfOr0ZS4pUJGH4IcD1VDm5M",
-  authDomain: "rtnmarket-80c37.firebaseapp.com",
-  projectId: "rtnmarket-80c37",
-  storageBucket: "rtnmarket-80c37.firebasestorage.app",
-  messagingSenderId: "798777246991",
-  appId: "1:798777246991:web:70915d21e81f9f4ed92a7a",
-  measurementId: "G-S8NRBMKE6Z"
-};
 </script>
 
 </body>
