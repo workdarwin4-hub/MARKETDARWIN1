@@ -427,7 +427,7 @@
         const productName = productType === 'popcorn' ? 'فشار' : 'منتج عادي';
 
         if (productType === 'popcorn') {
-            // قواعد الفشار المحدثة: من 6 إلى 18 يوم قبول، أقل من 6 أيام رفض، وأكثر من 18 يوم مرفوض
+            // الفشار: من 6 إلى 18 يوم قبول، أقل من 6 أيام رفض، وأكثر من 18 يوم مرفوض
             if (diffDays >= 6 && diffDays <= 18) {
                 resultText = 'قبول ✅';
                 resultColor = '#166534';
@@ -483,5 +483,3 @@
 
 </body>
 </html>
-
-```
